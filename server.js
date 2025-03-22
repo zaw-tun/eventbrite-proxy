@@ -1,32 +1,40 @@
-import express from 'express';
-import cors from 'cors';
-import axios from 'axios';
-import dotenv from 'dotenv';
+require("dotenv").config();
+const express = require("express");
+const axios = require("axios");
 
-dotenv.config();
 const app = express();
-app.use(cors());
+const PORT = process.env.PORT || 3000;
+
 app.use(express.json());
 
-const PORT = process.env.PORT || 4000;
-const EVENTBRITE_API_KEY = process.env.EVENTBRITE_API_KEY;
 
-app.delete('/api/eventbrite/events/:id', async (req, res) => {
-  const { id } = req.params;
+app.delete("/api/events/:eventId", async (req, res) => {
+  const { eventId } = req.params;
+  const eventbriteUrl = `https://www.eventbriteapi.com/v3/events/${eventId}/`;
 
   try {
-    await axios.delete(`https://www.eventbriteapi.com/v3/events/${id}/`, {
+    await axios.delete(eventbriteUrl, {
       headers: {
-        Authorization: `Bearer ${EVENTBRITE_API_KEY}`,
+        Authorization: `Bearer ${process.env.EVENTBRITE_API_KEY}`,
       },
     });
-    res.status(200).json({ success: true });
+    res.json({ success: true });
   } catch (error) {
-    console.error("Error deleting Eventbrite event:", error.response?.data || error.message);
-    res.status(500).json({ success: false, error: error.message });
+    console.error(
+      "Error deleting Eventbrite event:",
+      error.response?.data || error.message
+    );
+    res.status(500).json({
+      success: false,
+      error: "Failed to delete event from Eventbrite",
+    });
   }
 });
 
-app.get("/", (req, res) => res.send("Eventbrite Proxy API is running."));
+app.get("/", (req, res) => {
+  res.send("Eventbrite Proxy Server is running");
+});
 
-app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+app.listen(PORT, () => {
+  console.log(`Proxy server running on port ${PORT}`);
+});
